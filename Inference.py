@@ -9,9 +9,9 @@ text_generator = TextGenerationPipeline(model, tokenizer)
 while True:
     text = input('请输入您想咨询的疾病问题，目前仅支持（儿科，妇产科，男科，内科，外科，肿瘤科）:')
 
-    text = '<BOS>{text}<EOS>'.format(text=text)
+    text = '<QBOS>{text}<QEOS>'.format(text=text)
 
-    n = len(text)
+    # n = len(text)
 
     res = text_generator(
         text,
@@ -24,4 +24,4 @@ while True:
     )
 
     for i, r in enumerate(res):
-        print('候选回答{i}:'.format(i=i), r['generated_text'][n + 1:])
+        print('候选回答{i}:'.format(i=i), r['generated_text'])

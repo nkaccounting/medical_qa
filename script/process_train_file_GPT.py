@@ -1,19 +1,25 @@
 import pandas as pd
 
-df = pd.read_csv('../data/hello.csv')
+name = "all"
+
+original_data = '../data/{name}.csv'.format(name=name)
+
+out_put_name = '../{name}.txt'.format(name=name)
+
+dataframe = pd.read_csv(original_data)
 
 # 去除多余的？
-df['title'] = df['title'].str.rstrip('?|？')
+dataframe['title'] = dataframe['title'].str.rstrip('?|？')
 
 # 合并
-df['text'] = '<BOS>'+df['title'] + '？<EOS>' + df['answer']+'<EOS>'
+dataframe['text'] = '<QBOS>' + dataframe['title'] + '？<QEOS><ABOS>' + dataframe['answer'] + '<AEOS>'
 
-df.replace('\s+|\n', '', regex=True, inplace=True)
+dataframe.replace('\s+|\n', '', regex=True, inplace=True)
 
-df = df.sample(frac=1.0)
+dataframe = dataframe.sample(frac=1.0)
 
-df = df.dropna()
+dataframe = dataframe.dropna()
 
-with open('../all.txt', 'w', encoding='utf-8') as f:
-    for text in df['text']:
-        f.write(text+'\n')
+with open(out_put_name, 'w', encoding='utf-8') as f:
+    for text in dataframe['text']:
+        f.write(text + '\n')
