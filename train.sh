@@ -4,5 +4,5 @@ python run_clm.py \
   --per_device_train_batch_size 6 \
   --do_train \
   --save_step=5000 \
-  --num_train_epochs 10 \
+  --num_train_epochs 4 \
   --output_dir ./medical-clm
