@@ -50,6 +50,12 @@ t2 = time.time()
 print("读取向量构建faiss索引所用时间，", t2 - t1)
 
 t1 = time.time()
+df = pd.read_csv("../data/questions.csv", encoding="utf-8")
+questions = [question for question in df["questions"]]
+t2 = time.time()
+print("加载索引和question的对应关系所用时间，", t2 - t1)
+
+t1 = time.time()
 df = pd.read_csv("../data/answers.csv", encoding="utf-8")
 answers = [answer for answer in df["answers"]]
 t2 = time.time()
@@ -60,5 +66,9 @@ while True:
     D, I = (search_one_query(text, index, 5))
 
     for i, id in enumerate(I[0]):
+        if D[0][i] > 150:
+            print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
+            break
         print("相似度距离信息", D[0][i])
+        print("相似问题{i}:".format(i=i), questions[id])
         print('候选回答{i}:'.format(i=i), answers[id])

@@ -1,3 +1,5 @@
+import time
+
 import torch
 from transformers import BertTokenizer, GPT2LMHeadModel, TextGenerationPipeline
 
@@ -17,6 +19,7 @@ while True:
     text = '<QBOS>{text}<QEOS>'.format(text=text)
 
     # n = len(text)
+    t1 = time.time()
 
     res = text_generator(
         text,
@@ -29,6 +32,8 @@ while True:
         return_full_text=False,  # 不返回全部的文本，只返回生成的部分
         clean_up_tokenization_spaces=True  # 删除生成文本当中的空格
     )
+    t2 = time.time()
+    print("生成5个答案所用时间，", t2 - t1)
 
     for i, r in enumerate(res):
         print('候选回答{i}:'.format(i=i), r['generated_text'])

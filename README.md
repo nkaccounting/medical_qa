@@ -83,7 +83,7 @@ GPT-output3
 
 ### 一些改进和想法
 
-基于faiss做FAQ--尝试
+基于faiss做FAQ
 
 Faiss的全称是Facebook AI Similarity Search。 它是一个开源库，针对高维空间中的海量数据，提供了高效且可靠的检索方法。
 
@@ -113,7 +113,7 @@ faiss.IndexIVFFlat：构建索引
 但是768维的向量，总体来说还是比较大的，而在faiss当中有压缩算法，可以对向量进行压缩
 
     quantizer = faiss.IndexFlatL2(d)
-    index = faiss.IndexIVFPQ(quantizer,d,nlist--聚类中心个数,m--切割成m份，8)   #注意最后一个参数nbits要小于等于8
+    index = faiss.IndexIVFPQ(quantizer,d,nlist--聚类中心个数,m--切割成m份，8)   #注意最后一个参数nbits_per_idx要小于等于8
     index.train(xb)
     index.add(xb)
     index.nprobe = 3 # 搜索的聚类 个数
@@ -135,6 +135,94 @@ faiss.IndexIVFFlat：构建索引
     (array([[5.6189117, 9.614075 ]], dtype=float32),
      array([[ 28, 755]], dtype=int64))
 
+整体来说，对于比较大的n，IndexIVFFlat肯定优于IndexFlatL2
+
+其次随着n进一步增大，需要对原始向量进行压缩，从而节省存储空间
+
 下来以后好好理解一下这个：
 
 https://blog.csdn.net/rangfei/article/details/108177652
+
+https://blog.csdn.net/qq_33283652/article/details/116976900
+
+整体来说
+
+FAQ本身的缺点：
+
+回答只能限定在原本的这些问题-答案里面，扩展的时候就得加问题-答案；并且随之修改索引（倒排索引，faiss索引）等
+
+简单一点的索引也可以通过构建分词后，以词作为倒排的倒排索引
+
+然后基于tf-idf/BM25算法/编辑距离相似度/基本的向量距离，余弦/基于s-bert做语义相似度
+
+从左到右，基本的一个发展还是，前面的是关键词匹配，语义信息不需要两者完全一致，较为模糊的时候，关键词匹配即可
+
+当比较的两者需要比较严格，一些否定，比如说能吃什么和不能吃什么，用深度学习会更好
+
+faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也能保留语义信息
+
+#### 构建过程
+
+首先将所有的question去重以后，经过`bert`变成1*768维的向量，选取的bert模型为`sbert-base-chinese-nli`
+
+将向量送入到faiss的IndexIVFPQ方法进行索引构建
+
+这个方法的好处是
+
+其一是进行聚类，避免了在搜索的过程中进行全部向量的暴力搜索和比较
+
+其二是进行了乘积向量变换，对向量进行了压缩，避免了之后可能扩展系统768维向量都加载到内存中造成cuda溢出
+
+参数情况： `256-聚类中心` `划分8个子空间` `256-子空间聚类中心-8bits`
+
+1.索引构建时间和加载answer所用时间.png
+
+![img.png](picture/索引构建时间和加载answer所用时间.png)
+
+2.单条查询所需时间
+
+![img.png](picture/查询encode成向量的时间和索引时间.png)
+
+整体比GPT-2要快很多
+
+vs GPT-2生成单个问题5条回答所用的时间
+
+大致时间差8~9倍
+
+![img.png](picture/GPT-2生成单个问题5条回答所用的时间.png)
+
+3.查询质量
+
+Faiss-output1
+
+![img.png](picture/Faiss-output1.png)
+
+Faiss-output2
+
+![](picture/Faiss-output2.png)
+
+Faiss-output3
+
+![img.png](picture/Faiss-output3.png)
+
+Faiss-output4
+
+![img.png](picture/Faiss-output4.png)
+
+相比于GPT-2，输出都是严格按照预定义好的格式，不会不可控
+
+对于未定义的问题，由于问句太短，相似度比较容易相似，例如牙齿托槽掉了应该如何治疗和宝宝发热了应该如何治疗都是比较相似的
+
+如果预定义的问题里面没有牙齿、托槽相关的question，就会导致发烧也可能会被匹配出来，而且相似度较高
+
+经过一定的试验和观察，distance如果大于150的话，检索出来的结果基本不太可信
+
+将其设置为unanswerable，或者提示提问不明显。
+
+faiss-unanswerable1
+
+![img.png](picture/faiss-unanswerable1.png)
+
+### 构建answer的向量表示
+
+
