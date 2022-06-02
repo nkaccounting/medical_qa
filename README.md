@@ -14,7 +14,7 @@ A project about medical questioning and answering
 
 此处建模成
 
-<QBOS>question<QEOS><ABOS>answer<AEOS>
+`<QBOS>` question `<QEOS>` `<ABOS>` answer `<AEOS>`
 
 样例数据：
 
@@ -23,7 +23,7 @@ A project about medical questioning and answering
     <QBOS>小儿肥胖超重该如何治疗？<QEOS><ABOS>孩子出现肥胖症的情况。家长要通过孩子运功和健康的饮食来缓解他的症状，可以先让他做一些有氧运动，比如慢跑，爬坡，游泳等，并且饮食上孩子多吃黄瓜，胡萝卜，菠菜等，禁止孩子吃一些油炸食品和干果类食物，这些都是干热量高脂肪的食物，而且不要让孩子总是吃完就躺在床上不动，家长在治疗小儿肥胖期间如果孩子情况严重就要及时去医院在医生的指导下给孩子治疗。<AEOS>
     <QBOS>小儿肥胖能吃该如何医治？<QEOS><ABOS>当孩子患上肥胖症的时候家长可以增加孩子的运动量和控制他的饮食来改变症状，家长要监督孩子做一些有氧运动像慢跑，游泳等，要给孩子多吃一些像苹果，猕猴桃，胡萝卜等食物，一定要禁止孩子吃蛋糕，板栗这些高热量的食物，生活中不要让孩子在床上吃零食或者吃完就躺着这些不好的习惯也会让脂肪堆积，肥胖症治疗期间家长要根据孩子的情况进行合理的治疗，如果病情严重的话一定要去医院查明原因针对治疗。<AEOS>
 
-ID映射关系
+tokenizer-ID映射关系
 
     <QBOS>-1
     <QEOS>-2
@@ -71,7 +71,7 @@ GPT-output3
 
 ![](picture/GPT-output3.png)
 
-这个问题在文本训练的过程中没有涉及相关领域，导致回答不好
+这个问题在文本训练的过程中没有涉及相关领域的训练数据，导致回答不好
 
 为了保证相关性，可以对问句中的`疾病`、`症状`建立术语表后进行分词，回答中至少出现相关疾病、症状才算相关的回答。
 
@@ -80,6 +80,7 @@ GPT-output3
     1.知识修改的代价--疾病治疗情况发生了改变
     2.逻辑修改的代价--新的疾病进来
     3.模型本身输出的不可控性--模型答非所问
+    4.推理速度比较慢
 
 ### 一些改进和想法
 
@@ -116,7 +117,7 @@ faiss.IndexIVFFlat：构建索引
     index = faiss.IndexIVFPQ(quantizer,d,nlist--聚类中心个数,m--切割成m份，8)   #注意最后一个参数nbits_per_idx要小于等于8
     index.train(xb)
     index.add(xb)
-    index.nprobe = 3 # 搜索的聚类 个数
+    index.nprobe = 3 # 搜索的聚类个数
 
 三种index索引情况：
 
@@ -139,13 +140,13 @@ faiss.IndexIVFFlat：构建索引
 
 其次随着n进一步增大，需要对原始向量进行压缩，从而节省存储空间
 
-下来以后好好理解一下这个：
+下来以后好好理解一下这两个blog：
 
 https://blog.csdn.net/rangfei/article/details/108177652
 
 https://blog.csdn.net/qq_33283652/article/details/116976900
 
-整体来说
+#### 整体来说
 
 FAQ本身的缺点：
 
@@ -163,7 +164,7 @@ faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也
 
 #### 构建过程
 
-首先将所有的question去重以后，经过`bert`变成1*768维的向量，选取的bert模型为`sbert-base-chinese-nli`
+首先将所有的question去重以后，经过`bert`变成`1*768`维的向量，选取的bert模型为`sbert-base-chinese-nli`
 
 将向量送入到faiss的IndexIVFPQ方法进行索引构建
 
