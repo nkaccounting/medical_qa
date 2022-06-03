@@ -224,6 +224,37 @@ faiss-unanswerable1
 
 ![img.png](picture/faiss-unanswerable1.png)
 
+query->question->answer
+
+其实本质上和搜索没有什么区别，把query看作是一条查询
+
+question相当于是各个`文章/新闻/网页`的`标题`
+
+基于标题进行内容检索的过程
+
+那么进一步来考虑的话，不一定需要仅仅只对标题进行检索，文章的内容也是很重要的，考虑encode answer部分，构建成向量，由query直接查询相似答案
+
 ### 构建answer的向量表示
+
+采用前面类似的方法对问题进行向量化，然后输入question，查找最相似的answer
+
+search_answer_directly
+
+![img.png](picture/search_answer_directly.png)
+
+发现结果并不好
+
+问题一般在10个字以内，答案在几十个字~几百字不等
+
+在一般的`sbert-base-chinese-nli`模型下（encode两个句子表达的意思是不是同一个），这样本身question和answer就是不相似的
+
+因此没有办法用这样的方法进行encode和search
+
+如果非要尝试的话，可以考虑一下QNIL任务，判断两个句子是否是问题和答案关系的任务
+
+在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，可以自行训练
+
+https://github.com/alibaba-research/ChineseBLUE
+
 
 

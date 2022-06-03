@@ -1,0 +1,11 @@
+python run_glue.py \
+  --model_name_or_path ../pretrain_model/chinese-bert-wwm \
+  --train_file ./data/QNLI_train_file.json  \
+  --validation_file ./data/QNLI_eval_file.json \
+  --do_train \
+  --do_eval \
+  --max_seq_length 512 \
+  --per_device_train_batch_size 6 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 3 \
+  --output_dir /qnli \
