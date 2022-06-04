@@ -259,11 +259,12 @@ search_answer_directly
     (array([[283.7532 , 282.30878]], dtype=float32),
      array([[55, 91]], dtype=int64))
 
-### 训练一个能够判断qnli的模型，并将将其encode出来的向量进行相似性计算
+### 训练一个能够判断qnli的模型，用于判断当前找到的answer是否成立
 
-在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，可以自行训练
+在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，自行训练
 
 https://github.com/alibaba-research/ChineseBLUE
+
 训练参数：
 
     python run_glue.py \
@@ -282,3 +283,20 @@ https://github.com/alibaba-research/ChineseBLUE
 
 训练完成后可以用于精排阶段，验证文本是否是答案。
 
+测试一些基本的对话
+
+test_qnli1
+
+![img.png](picture/test_qnli1.png)
+
+test_qnli2
+
+![img_1.png](picture/test_qnli2.png)
+
+test_qnli3
+
+![img.png](picture/test_qnli3.png)
+
+test_qnli4
+
+![img.png](picture/test_qnli4.png)

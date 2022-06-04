@@ -4,12 +4,19 @@ import faiss
 import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModel
+from transformers import BertForSequenceClassification, BertTokenizer
 
-model_dir = "../sbert-base-chinese-nli"
+qnli_model_dir = '../cMedQNLI/qnli'
+encode_model_dir = "../sbert-base-chinese-nli"
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+qnli_model = BertForSequenceClassification.from_pretrained(qnli_model_dir)
+qnli_model = qnli_model.to(device)
+qnli_tokenizers = BertTokenizer.from_pretrained(qnli_model_dir)
 
 # Load model from HuggingFace Hub
-tokenizer = AutoTokenizer.from_pretrained(model_dir)
-model = AutoModel.from_pretrained(model_dir)
+encode_tokenizer = AutoTokenizer.from_pretrained(encode_model_dir)
+encode_model = AutoModel.from_pretrained(encode_model_dir)
 
 
 # Mean Pooling - Take attention mask into account for correct averaging
@@ -22,11 +29,12 @@ def mean_pooling(model_output, attention_mask):
 # Sentences we want sentence embeddings for
 def get_sentence_embedding(sentences: str):
     # Tokenize sentences
-    encoded_input = tokenizer(sentences, truncation=True, padding='max_length', max_length=512, return_tensors='pt')
+    encoded_input = encode_tokenizer(sentences, truncation=True, padding='max_length', max_length=512,
+                                     return_tensors='pt')
 
     # Compute token embeddings
     with torch.no_grad():
-        model_output = model(**encoded_input)
+        model_output = encode_model(**encoded_input)
 
     # Perform pooling. In this case, max pooling.
     sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
@@ -42,6 +50,15 @@ def search_one_query(question, index, top_k):
     print("句子生成向量时间，", t2 - t1)
     print("索引向量时间，", t3 - t2)
     return D, I
+
+
+def isQApair(question, answer):
+    paraphrase = qnli_tokenizers(question, answer, truncation=True, padding='max_length', max_length=512,
+                                 return_tensors="pt")
+    paraphrase = paraphrase.to(device)
+    paraphrase_classification_logits = qnli_model(**paraphrase).logits
+    paraphrase_results = torch.argmax(paraphrase_classification_logits, dim=1).tolist()[0]
+    return paraphrase_results
 
 
 t1 = time.time()
@@ -62,13 +79,21 @@ t2 = time.time()
 print("加载索引和answer的对应关系所用时间，", t2 - t1)
 
 while True:
+    top_k=5
     text = input('请输入您想咨询的疾病问题，目前仅支持（儿科，妇产科，男科，内科，外科，肿瘤科）:')
-    D, I = (search_one_query(text, index, 5))
+    D, I = (search_one_query(text, index, top_k))
+
+    no_answer=0
 
     for i, id in enumerate(I[0]):
-        if D[0][i] > 150:
-            print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
-            break
-        print("相似度距离信息", D[0][i])
-        print("相似问题{i}:".format(i=i), questions[id])
-        print('候选回答{i}:'.format(i=i), answers[id])
+        # if D[0][i] > 150:
+        #     print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
+        #     break
+        if isQApair(text, answers[id]):
+            print("相似度距离信息", D[0][i])
+            print("相似问题{i}:".format(i=i), questions[id])
+            print('候选回答{i}:'.format(i=i), answers[id])
+        else:
+            no_answer+=1
+            if no_answer==top_k:
+                print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
