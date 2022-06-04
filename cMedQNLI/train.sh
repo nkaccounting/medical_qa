@@ -1,5 +1,5 @@
 python run_glue.py \
-  --model_name_or_path ../pretrain_model/chinese-bert-wwm \
+  --model_name_or_path ../pretrain_model/bert-base-multilingual-cased \
   --train_file ./data/QNLI_train_file.json  \
   --validation_file ./data/QNLI_eval_file.json \
   --do_train \

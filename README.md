@@ -250,11 +250,35 @@ search_answer_directly
 
 因此没有办法用这样的方法进行encode和search
 
-如果非要尝试的话，可以考虑一下QNIL任务，判断两个句子是否是问题和答案关系的任务
+即便是采用IndexFlatIP计算内积/余弦相似度的办法相似度也不高
+
+    search_one_query("孩童中耳炎流黄水要如何医治", normal_index, 2)
+    句子生成向量时间， 1.0909523963928223
+    索引向量时间， 0.0
+    Out[3]: 
+    (array([[283.7532 , 282.30878]], dtype=float32),
+     array([[55, 91]], dtype=int64))
+
+### 训练一个能够判断qnli的模型，并将将其encode出来的向量进行相似性计算
 
 在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，可以自行训练
 
 https://github.com/alibaba-research/ChineseBLUE
+训练参数：
 
+    python run_glue.py \
+      --model_name_or_path ../pretrain_model/bert-base-multilingual-cased \
+      --train_file ./data/QNLI_train_file.json  \
+      --validation_file ./data/QNLI_eval_file.json \
+      --do_train \
+      --do_eval \
+      --max_seq_length 512 \
+      --per_device_train_batch_size 6 \
+      --learning_rate 3e-5 \
+      --num_train_epochs 3 \
+      --output_dir ./qnli \
 
+![img.png](picture/Qnli训练.png)
+
+训练完成后可以用于精排阶段，验证文本是否是答案。
 

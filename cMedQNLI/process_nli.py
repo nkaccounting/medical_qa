@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 
-df = pd.read_csv("./data/test.csv", header=None, delimiter="\t")
+df = pd.read_csv("data/test.csv", header=None, delimiter="\t")
 
 print(len(df))
 
@@ -24,7 +24,7 @@ for i, item in enumerate(df.itertuples()):
         }
         data.append(entailment_item)
 
-with open('./data/QNLI_eval_file.json', 'w', encoding='utf-8') as fp:
+with open('data/QNLI_eval_file.json', 'w', encoding='utf-8') as fp:
     json.dump({
         'data': data
     }, fp, ensure_ascii=False, indent=2)
