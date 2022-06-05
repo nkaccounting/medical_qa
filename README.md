@@ -346,3 +346,6 @@ faiss-output_with_qnli2
 服务访问
 
 ![img.png](picture/服务访问.png)
+
+docker打包
+![img.png](docker打包.png)
