@@ -10,7 +10,7 @@ A project about medical questioning and answering
 
 模型不知道哪部分是问句，哪部分是回答
 
-参考lamda的做法
+参考`LaMDA`的做法
 
 此处建模成
 
@@ -300,3 +300,24 @@ test_qnli3
 test_qnli4
 
 ![img.png](picture/test_qnli4.png)
+
+之前的方法利用相似度距离信息进行粗略地筛选
+
+当distance小于150时进行answer输出，但是这个实际上是不合理的，相似度低说明几乎接近question库里的问题，
+
+而有一些能够对应上的question相似度确是190多，表意一致，但是相似度较大
+
+同时，原本qa对也可能出现答非所问的情况，相似度高并不一定就是好的回答
+
+由于qnli任务选用小bert模型，inference的时候耗时较少，考虑由qnli推断找到的answer是否要进行输出:
+
+输出情况：
+
+faiss-output_with_qnli1
+
+![img.png](picture/faiss-output_with_qnli1.png)
+
+faiss-output_with_qnli2
+
+![img.png](picture/faiss-output_with_qnli2.png)
+

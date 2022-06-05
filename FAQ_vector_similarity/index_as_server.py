@@ -53,11 +53,15 @@ def search_one_query(question, index, top_k):
 
 
 def isQApair(question, answer):
+    t1 = time.time()
+
     paraphrase = qnli_tokenizers(question, answer, truncation=True, padding='max_length', max_length=512,
                                  return_tensors="pt")
     paraphrase = paraphrase.to(device)
     paraphrase_classification_logits = qnli_model(**paraphrase).logits
     paraphrase_results = torch.argmax(paraphrase_classification_logits, dim=1).tolist()[0]
+    t2 = time.time()
+    print("检查单个QApair时间，", t2 - t1)
     return paraphrase_results
 
 
@@ -79,11 +83,11 @@ t2 = time.time()
 print("加载索引和answer的对应关系所用时间，", t2 - t1)
 
 while True:
-    top_k=5
+    top_k = 5
     text = input('请输入您想咨询的疾病问题，目前仅支持（儿科，妇产科，男科，内科，外科，肿瘤科）:')
     D, I = (search_one_query(text, index, top_k))
 
-    no_answer=0
+    no_answer = 0
 
     for i, id in enumerate(I[0]):
         # if D[0][i] > 150:
@@ -94,6 +98,6 @@ while True:
             print("相似问题{i}:".format(i=i), questions[id])
             print('候选回答{i}:'.format(i=i), answers[id])
         else:
-            no_answer+=1
-            if no_answer==top_k:
+            no_answer += 1
+            if no_answer == top_k:
                 print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
