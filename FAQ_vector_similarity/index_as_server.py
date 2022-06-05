@@ -118,7 +118,7 @@ def one_question(text: str):
     no_answer = 0
 
     for i, id in enumerate(I[0]):
-        if not isQApair(text, answers[id]):
+        if isQApair(text, answers[id]):
             one_answer = {
                 "相似度距离信息": str(D[0][i]),
                 "相似问题{i}:".format(i=i): questions[id],
