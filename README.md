@@ -259,7 +259,15 @@ search_answer_directly
     (array([[283.7532 , 282.30878]], dtype=float32),
      array([[55, 91]], dtype=int64))
 
+如果还是采用向量相似的方法，正常来说训练一个模型encode question和answer到相同的向量表示会比较困难，对模型来说也可能出现confuse的情况（长短文本不一致）
+
+一般还是考虑query/question用一个encoder，answer/reference text部分用另一个encoder
+
+![img.png](picture/question&answer_encoder.png)
+
 ### 训练一个能够判断qnli的模型，用于判断当前找到的answer是否成立
+
+由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑qnli任务
 
 在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，自行训练
 
