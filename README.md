@@ -96,9 +96,17 @@ Faiss的全称是Facebook AI Similarity Search。 它是一个开源库，针对
 
 基本用法：
 
-    index = faiss.IndexFlatL2(d)/faiss.indexFlatIP--d代表向量的维度
+    index = faiss.IndexFlatL2(d)/faiss.IndexFlatIP--d代表向量的维度
     index.add()--numpy格式，float32
     index.search()--向量，找k个
+
+faiss.IndexFlatL2(d):
+
+    numpy.sqrt(numpy.sum(numpy.square(searched - query))),平方
+
+faiss.IndexFlatIP(d):
+
+    np.dot(query.T, searched)
 
 基本方法是暴力搜索，即遍历每一个向量进行计算的，如果index里面的向量过于多了，就会有问题
 

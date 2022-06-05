@@ -1,8 +1,11 @@
+import json
+import os
 import time
 
 import faiss
 import pandas as pd
 import torch
+from flask import Flask, request
 from transformers import AutoTokenizer, AutoModel
 from transformers import BertForSequenceClassification, BertTokenizer
 
@@ -82,22 +85,54 @@ answers = [answer for answer in df["answers"]]
 t2 = time.time()
 print("加载索引和answer的对应关系所用时间，", t2 - t1)
 
-while True:
+PORT = os.getenv('PORT', 2265)
+
+app = Flask(__name__)
+USE_ASCII = False
+app.config['JSON_AS_ASCII'] = USE_ASCII
+
+
+@app.route('/qa', methods=['GET'])
+def re():
+    text = request.args.get('text', None)
+    # === Error Detection ===
+
+    if text is None:
+        response = app.response_class(
+            response='The "text" argument is a must have.',
+            status=500,
+            mimetype='text/plain'
+        )
+        return response
+
+    res = one_question(text)
+
+    return json.dumps(res, ensure_ascii=False)
+
+
+def one_question(text: str):
     top_k = 5
-    text = input('请输入您想咨询的疾病问题，目前仅支持（儿科，妇产科，男科，内科，外科，肿瘤科）:')
+    result = []
     D, I = (search_one_query(text, index, top_k))
 
     no_answer = 0
 
     for i, id in enumerate(I[0]):
-        # if D[0][i] > 150:
-        #     print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
-        #     break
-        if isQApair(text, answers[id]):
-            print("相似度距离信息", D[0][i])
-            print("相似问题{i}:".format(i=i), questions[id])
-            print('候选回答{i}:'.format(i=i), answers[id])
+        if not isQApair(text, answers[id]):
+            one_answer = {
+                "相似度距离信息": str(D[0][i]),
+                "相似问题{i}:".format(i=i): questions[id],
+                '候选回答{i}:'.format(i=i): answers[id]
+            }
+            result.append(one_answer)
         else:
             no_answer += 1
             if no_answer == top_k:
-                print("对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~")
+                result.append({
+                    'no_answer': "对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~"
+                })
+    return result
+
+
+if __name__ == '__main__':
+    app.run('0.0.0.0', port=PORT)

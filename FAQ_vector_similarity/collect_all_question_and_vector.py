@@ -1,34 +1,13 @@
+from collections import defaultdict
+
 import pandas as pd
-
-name = "all"
-out_name = "question"
-
-original_data = '../data/{name}.csv'.format(name=name)
-
-out_put_name = '../data/{out_name}.csv'.format(out_name=out_name)
-
-dataframe = pd.read_csv(original_data)
-
-# 去除多余的？
-dataframe['title'] = dataframe['title'].str.rstrip('?|？')
-
-dataframe.replace('\s+|\n', '', regex=True, inplace=True)
-
-dataframe = dataframe.dropna()
-
-print(len(dataframe))
-
-questions = pd.Series(list(set(dataframe["title"])))
-
-print(len(questions))
-
-df = pd.DataFrame()
-
-df["questions"] = questions
-
 import torch
 from transformers import AutoTokenizer, AutoModel
 
+original_data = '../data/all.csv'
+index_vector_name = '../data/vectors.csv'
+index_question_name = "../data/questions.csv"
+index_answer_name = "../data/answers.csv"
 model_dir = "../sbert-base-chinese-nli"
 
 # Load model from HuggingFace Hub
@@ -62,12 +41,38 @@ def get_sentence_embedding(sentences: str):
     return sentence_embeddings
 
 
-vectors = []
+dataframe = pd.read_csv(original_data, nrows=10)
 
+# 一些预处理，数据清洗操作
+dataframe['title'] = dataframe['title'].str.rstrip('?|？')
+dataframe.replace('\s+|\n', '', regex=True, inplace=True)
+dataframe = dataframe.dropna()
+
+questions = pd.Series(list(set(dataframe["title"])))
+
+question2answer = defaultdict(str)
+
+for item in dataframe.itertuples():
+    # 以第一个出现的答案作为最终答案
+    if not question2answer.get(item[2]):
+        question2answer[item[2]] = item[4]
+
+answers = []
+
+for question in questions:
+    answers.append(question2answer[question])
+
+df = pd.DataFrame()
+
+df["questions"] = questions
+df["answers"] = pd.Series(answers)
+
+vectors = []
 for question in questions:
     vector = get_sentence_embedding(question)
     vectors.append(vector.tolist())
-
 df["vectors"] = pd.Series(vectors)
 
-df.to_csv(out_put_name, encoding="utf-8", index=0)
+df["vectors"].to_csv(index_vector_name, encoding="utf-8", index=0)
+df["questions"].to_csv(index_question_name, encoding="utf-8", index=0)
+df["answers"].to_csv(index_answer_name, encoding="utf-8", index=0)
