@@ -337,3 +337,12 @@ faiss-output_with_qnli2
 
 ![img.png](picture/faiss-output_with_qnli2.png)
 
+### 把整个项目打包成api+docker
+
+服务启动
+
+![img.png](picture/服务启动.png)
+
+服务访问
+
+![img.png](picture/服务访问.png)

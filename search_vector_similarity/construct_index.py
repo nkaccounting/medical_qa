@@ -96,3 +96,13 @@ compression_index = construct_compression_index(d, 256, 8, 8, vectors)
 search_one_query("孩童中耳炎流黄水要如何医治", compression_index, 2)
 
 faiss.write_index(compression_index, "./compression_index.bin")
+
+# searched = vectors[91]
+#
+# query = get_sentence_embedding("孩童中耳炎流黄水要如何医治")
+#
+# query = query.numpy()
+#
+# query = query[0]
+#
+# np.dot(query.T, searched)

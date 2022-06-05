@@ -41,7 +41,7 @@ def get_sentence_embedding(sentences: str):
     return sentence_embeddings
 
 
-dataframe = pd.read_csv(original_data, nrows=10)
+dataframe = pd.read_csv(original_data)
 
 # 一些预处理，数据清洗操作
 dataframe['title'] = dataframe['title'].str.rstrip('?|？')
