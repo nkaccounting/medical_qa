@@ -244,6 +244,22 @@ question相当于是各个`文章/新闻/网页`的`标题`
 
 ### 构建answer的向量表示
 
+基于传统的搜索算法：
+
+BM25
+
+![img.png](picture/BM25.png)
+
+首先将所有answer去重后进行jieba分词，过滤掉部分停用词，保存到answer_cut.csv
+
+基于此再构建一个词的倒排索引，包含某个词的文档有哪些，记录下其id
+
+
+
+DPR
+
+![img.png](picture/DPR.png)
+
 采用前面类似的方法对问题进行向量化，然后输入question，查找最相似的answer
 
 search_answer_directly
@@ -348,4 +364,5 @@ faiss-output_with_qnli2
 ![img.png](picture/服务访问.png)
 
 docker打包
+
 ![img.png](docker打包.png)
