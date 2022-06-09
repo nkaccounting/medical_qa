@@ -365,4 +365,5 @@ faiss-output_with_qnli2
 
 docker打包
 
-![img.png](docker打包.png)
+![](picture/docker打包.png)
+
