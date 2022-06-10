@@ -1,9 +1,7 @@
+import ast
 import math
 
-import jieba
 import pandas as pd
-
-from utils import utils
 
 # 测试文本
 text = '''
@@ -14,9 +12,9 @@ text = '''
 class BM25(object):
 
     def __init__(self, docs):
-        self.D = len(docs)
-        self.avgdl = sum([len(doc) + 0.0 for doc in docs]) / self.D
-        self.docs = docs
+        self.D = len(docs)  # 总的文档数
+        self.avgdl = sum([len(doc) + 0.0 for doc in docs]) / self.D  # 所有文档的平均长度
+        self.docs = docs  # 所有文档
         self.f = []  # 列表的每一个元素是一个dict，dict存储着一个文档中每个词的出现次数
         self.df = {}  # 存储每个词及出现了该词的文档数量
         self.idf = {}  # 存储每个词的idf值
@@ -36,34 +34,29 @@ class BM25(object):
             self.idf[k] = math.log(self.D - v + 0.5) - math.log(v + 0.5)
 
     def sim(self, doc, index):
-        score = 0
+        scores = {}
         for word in doc:
             if word not in self.f[index]:
                 continue
             d = len(self.docs[index])
-            score += (self.idf[word] * self.f[index][word] * (self.k1 + 1)
-                      / (self.f[index][word] + self.k1 * (1 - self.b + self.b * d
-                                                          / self.avgdl)))
-        return score
-
-    def simall(self, doc):
-        scores = []
-        for index in range(self.D):
-            score = self.sim(doc, index)
-            scores.append((index, score))
-        scores.sort(key=lambda x: x[1], reverse=True)
+            value = self.idf[word] * self.f[index][word] * (self.k1 + 1) / (
+                    self.f[index][word] + self.k1 * (1 - self.b + self.b * d / self.avgdl))
+            scores[word] = value
         return scores
 
 
 if __name__ == '__main__':
-    doc = []
-    df = pd.read_csv("../data/all.csv", nrows=1000)
-    for answer in df["answer"]:
-        words = list(jieba.cut(answer))
-        words = utils.filter_stop(words)
-        doc.append(words)
-    print(doc)
-    s = BM25(doc)
-    print(s.f)
-    print(s.idf)
-    print(s.simall(['小儿', '肥胖', '超重', '该', '如何', '治疗']))
+    df = pd.read_csv("../data/answer_cut.csv")
+    documents = [ast.literal_eval(item) for item in df["answer_cut"]]
+
+    s = BM25(documents)
+    length = len(documents)
+    words_score = []
+    for i, document in enumerate(documents):
+        if i % 1000 == 0:
+            print(i / length)
+        words_score.append(s.sim(document, i))
+
+    df["words_score"] = pd.Series(words_score)
+
+    df.to_csv("../data/words_score.csv", index=0, encoding="utf-8")
