@@ -254,7 +254,21 @@ BM25
 
 基于此再构建一个词的倒排索引，包含某个词的文档有哪些，记录下其id
 
+阅读DPR的论文-Dense Passage Retrieval for Open-Domain Question Answering
 
+https://arxiv.org/abs/2004.04906
+
+    For example, synonyms or paraphrases that consist of
+    completely different tokens may still be mapped to
+    vectors close to each other. Consider the question
+    “Who is the bad guy in lord of the rings?”, which can
+    be answered from the context “Sala Baker is best
+    known for portraying the villain Sauron in the Lord
+    of the Rings trilogy.
+
+包含完全不相同的词的两段文本（Q，A）也是具有对应关系的；
+
+这种时候如果用稀疏的BM25就可能算出来score值比较低，导致文本被筛选掉
 
 DPR
 
