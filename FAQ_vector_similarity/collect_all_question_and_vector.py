@@ -68,7 +68,11 @@ df["questions"] = questions
 df["answers"] = pd.Series(answers)
 
 vectors = []
+i = 0
 for question in questions:
+    i += 1
+    if i % 1000 == 0:
+        print("已完成：", i)
     vector = get_sentence_embedding(question)
     vectors.append(vector.tolist())
 df["vectors"] = pd.Series(vectors)
