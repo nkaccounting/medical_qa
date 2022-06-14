@@ -154,6 +154,23 @@ https://blog.csdn.net/rangfei/article/details/108177652
 
 https://blog.csdn.net/qq_33283652/article/details/116976900
 
+使用单卡GPU创建索引：
+
+    res = faiss.StandardGpuResources()  # use a single GPU
+    # build a flat (CPU) index
+    index_flat = faiss.IndexFlatL2(d)
+    # make it into a gpu index
+    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
+
+使用多张卡创建GPU索引：
+
+    ngpus = faiss.get_num_gpus()
+    cpu_index = faiss.IndexFlatL2(d)
+    gpu_index = faiss.index_cpu_to_all_gpus(  # build the index
+        cpu_index
+    )
+
+
 #### 整体来说
 
 FAQ本身的缺点：
