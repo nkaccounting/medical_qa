@@ -1,4 +1,3 @@
-import json
 import os
 import time
 
@@ -107,7 +106,12 @@ def re():
 
     res = one_question(text)
 
-    return json.dumps(res, ensure_ascii=False)
+    response = {
+        'question': text,
+        "information": res
+    }
+
+    return response
 
 
 def one_question(text: str, not_use_qnli=True):
