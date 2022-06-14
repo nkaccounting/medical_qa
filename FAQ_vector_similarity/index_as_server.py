@@ -110,7 +110,7 @@ def re():
     return json.dumps(res, ensure_ascii=False)
 
 
-def one_question(text: str):
+def one_question(text: str, not_use_qnli=True):
     top_k = 5
     result = []
     D, I = (search_one_query(text, index, top_k))
@@ -118,7 +118,7 @@ def one_question(text: str):
     no_answer = 0
 
     for i, id in enumerate(I[0]):
-        if isQApair(text, answers[id]):
+        if not_use_qnli or isQApair(text, answers[id]):
             one_answer = {
                 "相似度距离信息": str(D[0][i]),
                 "相似问题{i}:".format(i=i): questions[id],
