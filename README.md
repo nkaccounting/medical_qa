@@ -8,7 +8,7 @@ A project about medical question and answering
 
 DrQA：[Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051)
 
-ORQA：[Latent Retrieval for Weakly Supervised](https://arxiv.org/abs/1704.00051)
+ORQA：[Latent Retrieval for Weakly Supervised Open Domain Question Answering](https://arxiv.org/abs/1906.00300)
 
 DPR：[Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906)
 
