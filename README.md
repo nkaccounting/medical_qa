@@ -1,6 +1,41 @@
 # medical_qa
 
-A project about medical questioning and answering
+A project about medical question and answering
+
+# 近期论文阅读
+
+近期阅读的部分论文和心得：
+
+DrQA：[Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051)
+
+ORQA：[Latent Retrieval for Weakly Supervised](https://arxiv.org/abs/1704.00051)
+
+DPR：[Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906)
+
+GAR：[Generation-augmented retrieval for open-domain question answering](https://arxiv.org/abs/2009.08553)
+
+RocketQA：[RocketQA An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2010.08191)
+
+大致梳理一下open-domain question and answering的时间线和发展关系
+
+DrQA是比较早期的问答系统，采用的retriever和reader都是比较原始的方法，retriever主要是一些TF-IDF以及BM25这样的sparse
+embedding；而reader部分当时主流的双向LSTM+attention注意力机制，以之为代表的是[BiDAF](https://arxiv.org/abs/1611.01603)
+
+ORQA主要是针对早期的retriever都是基于sparse embedding，当出现关键词没有覆盖的情况时，就无法进行匹配，其设计了一个ICT反向完型填空任务，原本谷歌的BERT采用的是对句子进行挖空，填写[Mask]
+而ORQA从段落中挖出一个句子的空，预测该句子和上下文、以及负采样其他上下文；将句子视作伪的question，形成一个无监督的大规模预训练；90%是不涉及原词，10%涉及到原词
+
+DPR直接对前面两项工作进行重构，这种挖空出来的伪question上下游任务并不一致，提出基于现在已经较为成熟的pretrain model进行dual-encoder和in-batch negative
+
+GAR主要是更加模拟人的思考过程；当一个人收到一个问题的时候，心里会先想起一些答案，以及关于答案的印象；如果是开卷情况，再按照自己的印象进行查找
+q-->generate{answer、content、title},这些扩展出来的信息，能够自然地蕴含意图并涉及到的更多信息，然后再放到一个轻量的retriever上进行检索
+
+RocketQA主要是基于DPR的工作在往下进行展开
+
+通过分布式的多GPU，提出cross batch negative来优化in-batch negative，模拟真实场景中存在大量负样本选一个正样本的情况
+
+现在contrastive learning的范式，需要拉近正样本，拉远负样本，而数据集通过很随机的采样方式，会导致负样本是伪负样本；
+
+目前的训练集相对于真实的场景，训练的数据还是不够；针对正负样本的问题，用一个效率比较低，但是效果比较好的cross-encoder结构来当teacher，然后帮助dual-encoder student进行学习
 
 # 生成式对话问答模型
 
@@ -235,13 +270,13 @@ DPR的基本原理，dual-encoder
 
 一般还是考虑query/question用一个encoder，answer/reference text部分用另一个encoder
 
+参照FAQ类似的方法进行实现
+
 ### 训练一个QNLI模型，用于判断当前找到的answer是否成立
 
 由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑`cross-encoder`结构的`QNLI`任务
 
-在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，自行训练
-
-https://github.com/alibaba-research/ChineseBLUE
+在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集[ChineseBLUE](https://github.com/alibaba-research/ChineseBLUE)，自行训练
 
 训练参数：
 
@@ -257,11 +292,11 @@ https://github.com/alibaba-research/ChineseBLUE
       --num_train_epochs 3 \
       --output_dir ./qnli \
 
-共计时长：1小时16分钟
+训练时长共计：1小时16分钟
 
 ![img.png](picture/Qnli训练.png)
 
-训练完成后可以用于精排阶段，验证文本是否是答案，甚至选择输出label为entailment且score值最高的来作为答案。
+训练完成后可以用于精排阶段，验证文本是否是答案，甚至可以选择输出label为entailment且score值最高的answer来作为答案。
 
 测试一些基本的对话
 
