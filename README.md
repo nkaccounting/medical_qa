@@ -101,109 +101,19 @@ transformer的本质还是在feed forward层建立起来了kv，而kv代表的�
 
 ![img_1.png](语言模型也是知识图谱2.png)
 
-### 一些改进和想法
+### 重点关注如何保证对话可控性的一些改进和想法
 
 基于faiss做FAQ
 
-Faiss的全称是Facebook AI Similarity Search。 它是一个开源库，针对高维空间中的海量数据，提供了高效且可靠的检索方法。
-
-将原csv文件中的question，经过sbert-base-chinese-nli，encode成向量，然后将向量喂入到faiss库当中
+将原csv文件中的question，经过sbert-base-chinese-nli，encode成向量，然后将向量送入到faiss当中进行索引构建
 
 每当新进来一个question的时候，将这个question也encode成向量，然后基于faiss进行向量检索
 
 选择最相似的question的答案来作为目标question的答案
 
-基本用法：
+项目流程图
 
-    index = faiss.IndexFlatL2(d)/faiss.IndexFlatIP--d代表向量的维度
-    index.add()--numpy格式，float32
-    index.search()--向量，找k个
-
-faiss.IndexFlatL2(d):
-
-    numpy.sqrt(numpy.sum(numpy.square(searched - query))),平方
-
-faiss.IndexFlatIP(d):
-
-    np.dot(query.T, searched)
-
-基本方法是暴力搜索，即遍历每一个向量进行计算的，如果index里面的向量过于多了，就会有问题
-
-faiss.IndexIVFFlat：构建索引
-
-    quantizer = faiss.IndexFlatL2(d)  # 量化器
-    index = faiss.IndexIVFFlat(quantizer, d, nlist--聚类中心个数, faiss.METRIC_L2)
-    index.train(vectors) # 要对这堆向量算出聚类中心
-    index.add(vectors)
-    index.nprobe = 5 # 修改查找的聚类中心，默认的时候是先去找nprobe个聚类中心，然后再比较这里面的所有
-    注意nprobe和nlist两个数值要匹配使用，一般是成比例增大
-
-但是768维的向量，总体来说还是比较大的，而在faiss当中有压缩算法，可以对向量进行压缩
-
-    quantizer = faiss.IndexFlatL2(d)
-    index = faiss.IndexIVFPQ(quantizer,d,nlist--聚类中心个数,m--切割成m份，8)   #注意最后一个参数nbits_per_idx要小于等于8
-    index.train(xb)
-    index.add(xb)
-    index.nprobe = 3 # 搜索的聚类个数
-
-三种index索引情况：
-
-    search_one_query("孩童中耳炎流黄水要如何医治", normal_index, 2)
-    句子生成向量时间， 1.0599839687347412
-    索引向量时间， 0.0010004043579101562
-    Out[4]: (array([[0.     , 7.86909]], dtype=float32), array([[ 28, 755]], dtype=int64))
-    search_one_query("孩童中耳炎流黄水要如何医治", center_index, 2)
-    句子生成向量时间， 1.0576732158660889
-    索引向量时间， 0.0009987354278564453
-    Out[5]: (array([[0.     , 7.86909]], dtype=float32), array([[ 28, 755]], dtype=int64))
-    search_one_query("孩童中耳炎流黄水要如何医治", compression_index, 2)
-    句子生成向量时间， 1.0959687232971191
-    索引向量时间， 0.0
-    Out[6]: 
-    (array([[5.6189117, 9.614075 ]], dtype=float32),
-     array([[ 28, 755]], dtype=int64))
-
-整体来说，对于比较大的n，IndexIVFFlat肯定优于IndexFlatL2
-
-其次随着n进一步增大，需要对原始向量进行压缩，从而节省存储空间
-
-下来以后好好理解一下这两个blog：
-
-https://blog.csdn.net/rangfei/article/details/108177652
-
-https://blog.csdn.net/qq_33283652/article/details/116976900
-
-使用单卡GPU创建索引：
-
-    res = faiss.StandardGpuResources()  # use a single GPU
-    # build a flat (CPU) index
-    index_flat = faiss.IndexFlatL2(d)
-    # make it into a gpu index
-    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
-
-使用多张卡创建GPU索引：
-
-    ngpus = faiss.get_num_gpus()
-    cpu_index = faiss.IndexFlatL2(d)
-    gpu_index = faiss.index_cpu_to_all_gpus(  # build the index
-        cpu_index
-    )
-
-#### 整体来说
-
-FAQ本身的缺点：
-
-回答只能限定在原本的这些问题-答案里面，扩展的时候就得加问题-答案；并且随之修改索引（倒排索引，faiss索引）等
-
-简单一点的索引也可以通过构建分词后，以词作为倒排的倒排索引
-
-然后基于tf-idf/BM25算法/编辑距离相似度/基本的向量距离，余弦/基于s-bert做语义相似度
-
-从左到右，基本的一个发展还是，前面的是关键词匹配，语义信息不需要两者完全一致，较为模糊的时候，关键词匹配即可
-
-当比较的两者需要比较严格，一些否定，比如说能吃什么和不能吃什么，用深度学习会更好
-
-faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也能保留语义信息
+![](picture/flow_chart_of_FAQ.jpg)
 
 #### 构建过程
 
@@ -275,6 +185,22 @@ question相当于是各个`文章/新闻/网页`的`标题`
 
 基于标题进行内容检索的过程
 
+#### FAQ优缺点分析
+
+FAQ本身的缺点：
+
+回答只能限定在原本的这些问题-答案里面，扩展的时候就得加问题-答案；并且随之修改索引（倒排索引，faiss索引）等
+
+简单一点的索引也可以通过构建分词后，以词作为倒排的倒排索引
+
+然后基于tf-idf/BM25算法/编辑距离相似度/基本的词向量距离，余弦/基于s-bert做语义相似度
+
+从左到右，基本的一个发展还是，前面的是关键词匹配，语义信息不需要两者完全一致，较为模糊的时候，关键词匹配即可
+
+当比较的两者需要比较严格，一些否定，比如说能吃什么和不能吃什么，用深度学习会更好
+
+faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也能保留语义信息
+
 那么进一步来考虑的话，不一定需要仅仅只对标题进行检索，文章的内容也是很重要的，考虑encode answer部分，构建成向量，由query直接查询相似答案
 
 ### 构建answer的向量表示
@@ -289,9 +215,7 @@ BM25
 
 基于此再构建一个词的倒排索引，包含某个词的文档有哪些，记录下其id
 
-阅读DPR的论文-Dense Passage Retrieval for Open-Domain Question Answering
-
-https://arxiv.org/abs/2004.04906
+阅读DPR的论文-[Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906)
 
     For example, synonyms or paraphrases that consist of
     completely different tokens may still be mapped to
@@ -303,44 +227,17 @@ https://arxiv.org/abs/2004.04906
 
 包含完全不相同的词的两段文本（Q，A）也是具有对应关系的；
 
-这种时候如果用稀疏的BM25就可能算出来score值比较低，导致文本被筛选掉
+这种时候如果用稀疏的BM25就可能算出来score值比较低，导致文本被筛选掉；而在医疗问答当中尤其明显，大部分的回答并不是直接大量cover query当中的原词
 
-DPR
+DPR的基本原理，dual-encoder
 
 ![img.png](picture/DPR.png)
 
-采用前面类似的方法对问题进行向量化，然后输入question，查找最相似的answer
-
-search_answer_directly
-
-![img.png](picture/search_answer_directly.png)
-
-发现结果并不好
-
-问题一般在10个字以内，答案在几十个字~几百字不等
-
-在一般的`sbert-base-chinese-nli`模型下（encode两个句子表达的意思是不是同一个），这样本身question和answer就是不相似的
-
-因此没有办法用这样的方法进行encode和search
-
-即便是采用IndexFlatIP计算内积/余弦相似度的办法相似度也不高
-
-    search_one_query("孩童中耳炎流黄水要如何医治", normal_index, 2)
-    句子生成向量时间， 1.0909523963928223
-    索引向量时间， 0.0
-    Out[3]: 
-    (array([[283.7532 , 282.30878]], dtype=float32),
-     array([[55, 91]], dtype=int64))
-
-如果还是采用向量相似的方法，正常来说训练一个模型encode question和answer到相同的向量表示会比较困难，对模型来说也可能出现confuse的情况（长短文本不一致）
-
 一般还是考虑query/question用一个encoder，answer/reference text部分用另一个encoder
 
-![img.png](picture/question&answer_encoder.png)
+### 训练一个QNLI模型，用于判断当前找到的answer是否成立
 
-### 训练一个能够判断qnli的模型，用于判断当前找到的answer是否成立
-
-由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑qnli任务
+由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑`cross-encoder`结构的`QNLI`任务
 
 在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集，自行训练
 
@@ -360,9 +257,11 @@ https://github.com/alibaba-research/ChineseBLUE
       --num_train_epochs 3 \
       --output_dir ./qnli \
 
+共计时长：1小时16分钟
+
 ![img.png](picture/Qnli训练.png)
 
-训练完成后可以用于精排阶段，验证文本是否是答案。
+训练完成后可以用于精排阶段，验证文本是否是答案，甚至选择输出label为entailment且score值最高的来作为答案。
 
 测试一些基本的对话
 
@@ -381,6 +280,14 @@ test_qnli3
 test_qnli4
 
 ![img.png](picture/test_qnli4.png)
+
+关于cross-encoder为什么要比dual-encoder更适合做精排的一些想法：
+
+    dual-encoder是两边分别只看到单独的文本，各自算出一个向量表示，好处是这些向量可以预先算出来存储
+    时间复杂度是O(m+n)
+    
+    cross-encoder是两个句子逐字逐句一个一个进行attention比较，更加精确
+    如果要全部文档扫一遍的话，时间复杂度为O(n*m)
 
 之前的方法利用相似度距离信息进行粗略地筛选
 
