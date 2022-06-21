@@ -12,6 +12,8 @@ ORQA：[Latent Retrieval for Weakly Supervised Open Domain Question Answering](h
 
 DPR：[Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906)
 
+[Learning Dense Representations of Phrases at Scale](https://arxiv.org/abs/2012.12624)
+
 GAR：[Generation-augmented retrieval for open-domain question answering](https://arxiv.org/abs/2009.08553)
 
 RocketQA：[RocketQA An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2010.08191)
@@ -25,6 +27,22 @@ ORQA主要是针对早期的retriever都是基于sparse embedding，当出现关
 而ORQA从段落中挖出一个句子的空，预测该句子和上下文、以及负采样其他上下文；将句子视作伪的question，形成一个无监督的大规模预训练；90%是不涉及原词，10%涉及到原词
 
 DPR直接对前面两项工作进行重构，这种挖空出来的伪question上下游任务并不一致，提出基于现在已经较为成熟的pretrain model进行dual-encoder和in-batch negative
+
+Learning Dense Representations of Phrases at Scale
+
+    紧承DPR往后做的研究。既然可以用向量搜索的形式，为什么一定还需要reader（IR的累计错误+reader过于慢），是否可以直接搜索答案的向量。
+    对于短语来说取的是spanbert中短语开始和结束位置的向量表示；对于问题来说，为了和短语同维度，选择两个bert取两个cls。
+    
+    数据增强+知识蒸馏：一般来说一个文档只标注了一个问题，想要学习出句子级别的表示不太够；抽取出全部的实体，然后实体+文档->经过一个T5 generative model，生成提问。
+    反过来，用一个好的spanbert mrc模型，判断生成的question+文档->answer是否高可信，高可信的加入到训练当中。--老师教学生的方法，数据增强。
+    
+    pre-batch，记录下单卡最近几轮计算时的向量，作为负样本，然后将这些负样本一起放到loss里面的分母里去。--本质上还是增大负样本数量，理论上只有是负样本模拟真实场景应该是尽可能多。
+
+    query-side fine-tune：固定下phrase encode部分，然后单独对query向量&查询出来的phrase top k，+-进行一遍fine-tune。--便于迁移领域，缩小预训练和使用的差异。
+    最后这个东西构建起来以后，基本就像一个知识图谱了
+
+整体这个Learning Dense Representations of Phrases at Scale的工作和后面RocketQA很像，甚至RocketQA的思想和这个基本一致。pre-batch vs
+in-batch、cross-encoder的数据增强和知识蒸馏。
 
 GAR主要是更加模拟人的思考过程；当一个人收到一个问题的时候，心里会先想起一些答案，以及关于答案的印象；如果是开卷情况，再按照自己的印象进行查找
 q-->generate{answer、content、title},这些扩展出来的信息，能够自然地蕴含意图并涉及到的更多信息，然后再放到一个轻量的retriever上进行检索
