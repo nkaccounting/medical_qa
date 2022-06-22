@@ -150,9 +150,9 @@ idea from [Transformer Feed-Forward Layers Are Key-Value Memories](https://arxiv
 
 transformer的本质还是在feed forward层建立起来了kv，而kv代表的就是知识
 
-![img.png](语言模型也是知识图谱1.png)
+![](picture/语言模型也是知识图谱1.png)
 
-![img_1.png](语言模型也是知识图谱2.png)
+![](picture/语言模型也是知识图谱2.png)
 
 ### 重点关注如何保证对话可控性的一些改进和想法
 

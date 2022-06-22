@@ -114,7 +114,7 @@ def re():
     return response
 
 
-def one_question(text: str, not_use_qnli=True):
+def one_question(text: str, not_use_qnli=False):
     top_k = 5
     result = []
     D, I = (search_one_query(text, index, top_k))
