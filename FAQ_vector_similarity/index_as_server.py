@@ -55,16 +55,27 @@ def search_one_query(question, index, top_k):
 
 
 def isQApair(question, answer):
+    res = []
+    scores = []
     t1 = time.time()
-
-    paraphrase = qnli_tokenizers(question, answer, truncation=True, padding='max_length', max_length=512,
+    # 将一个batch的qa pair组合起来
+    batch = list(zip(question, answer))
+    paraphrase = qnli_tokenizers(batch, truncation=True, padding='max_length', max_length=512,
                                  return_tensors="pt")
     paraphrase = paraphrase.to(device)
     paraphrase_classification_logits = qnli_model(**paraphrase).logits
-    paraphrase_results = torch.argmax(paraphrase_classification_logits, dim=1).tolist()[0]
+    paraphrase_score_results = torch.softmax(paraphrase_classification_logits, dim=1).tolist()
+    for item in paraphrase_score_results:
+        if item[0] >= item[1]:
+            res.append(0)
+            scores.append(item[0])
+        else:
+            res.append(1)
+            scores.append(item[1])
     t2 = time.time()
-    print("检查单个QApair时间，", t2 - t1)
-    return paraphrase_results
+    print("检查单个QApair平均时间，", (t2 - t1) / len(question))
+    print("检查这一批QApair时间，", t2 - t1)
+    return res, scores
 
 
 t1 = time.time()
@@ -119,13 +130,17 @@ def one_question(text: str, not_use_qnli=False):
     result = []
     D, I = (search_one_query(text, index, top_k))
 
+    res = [answers[id] for id in I[0]]
+    isqa, scores = isQApair([text] * top_k, res)
+
     no_answer = 0
 
     for i, id in enumerate(I[0]):
-        if not_use_qnli or isQApair(text, answers[id]):
+        if not_use_qnli or isqa[i]:
             one_answer = {
+                "相似问题:".format(i=i): questions[id],
                 "相似度距离信息": str(D[0][i]),
-                "相似问题{i}:".format(i=i): questions[id],
+                '可信度'.format(i=i): scores[i],
                 '候选回答{i}:'.format(i=i): answers[id]
             }
             result.append(one_answer)
