@@ -3,7 +3,7 @@ import time
 import torch
 from transformers import BertTokenizer, GPT2LMHeadModel, TextGenerationPipeline
 
-model_dir = "./medical-clm/checkpoint-10000"
+model_dir = "./medical_clm"
 
 tokenizer = BertTokenizer.from_pretrained(model_dir)
 model = GPT2LMHeadModel.from_pretrained(model_dir)
