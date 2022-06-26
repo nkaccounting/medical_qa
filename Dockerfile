@@ -4,9 +4,11 @@ COPY FAQ_vector_similarity /workspace
 
 COPY sbert-base-chinese-nli /sbert-base-chinese-nli
 
-COPY data /data
+COPY data/answers.csv /data/answers.csv
 
-COPY cMedQNLI /cMedQNLI
+COPY data/questions.csv /data/questions.csv
+
+COPY cMedQNLI/qnli /cMedQNLI/qnli
 
 COPY requirements.txt /workspace/requirements.txt
 

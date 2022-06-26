@@ -49,15 +49,16 @@ q-->generate{answer、content、title},这些扩展出来的信息，能够自�
 
 RocketQA主要是基于DPR的工作在往下进行展开
 
-通过分布式的多GPU，提出cross batch negative来优化in-batch negative，模拟真实场景中存在大量负样本选一个正样本的情况
+通过分布式的多GPU，提出cross batch negative来优化in-batch negative，模拟真实场景中存在大量负样本选一个正样本的情况（和pre-batch，基本思想一样）
 
 现在contrastive learning的范式，需要拉近正样本，拉远负样本，而数据集通过很随机的采样方式，会导致负样本是伪负样本；
+目前的训练集相对于真实的场景，训练的数据还是不够；
 
-目前的训练集相对于真实的场景，训练的数据还是不够；针对正负样本的问题，用一个效率比较低，但是效果比较好的cross-encoder结构来当teacher，然后帮助dual-encoder student进行学习
+针对正负样本的问题(正样本不足&负样本为假），用一个效率比较低，但是效果比较好的cross-encoder结构来当teacher，然后帮助dual-encoder student进行学习
 
 # 生成式对话问答模型
 
-基于`gpt2-chinese-cluecorpussmall`，将问答和对话建模成生成式问题
+基于[gpt2-chinese-cluecorpussmall](https://huggingface.co/uer/gpt2-chinese-cluecorpussmall)，将问答和对话建模成生成式问题
 
 即question+answer，从左往右进行生成
 
@@ -65,11 +66,13 @@ RocketQA主要是基于DPR的工作在往下进行展开
 
 模型不知道哪部分是问句，哪部分是回答
 
-参考`LaMDA`的做法，[LaMDA: Language Models for Dialog Applications](https://arxiv.org/pdf/2201.08239.pdf)
+参考[LaMDA: Language Models for Dialog Applications](https://arxiv.org/pdf/2201.08239.pdf)的做法
 
 此处建模成
 
 `<QBOS>` question `<QEOS>` `<ABOS>` answer `<AEOS>`
+
+后续也可以按照这些special token扩展多轮问答和对话的训练
 
 训练样例数据：
 
@@ -154,9 +157,13 @@ transformer的本质还是在feed forward层建立起来了kv，而kv代表的�
 
 ![](picture/语言模型也是知识图谱2.png)
 
-### 重点关注如何保证对话可控性的一些改进和想法
+那么整个问答的对话过程就可以按照检索KV的形式进行推进
 
-基于faiss做FAQ
+![](picture/question_as_key_and_answer_as_memory.png)
+
+### 基于faiss做question的语义向量空间搜索
+
+[faiss学习](FAQ_vector_similarity/README.md)
 
 将原csv文件中的question，经过sbert-base-chinese-nli，encode成向量，然后将向量送入到faiss当中进行索引构建
 
@@ -170,7 +177,8 @@ transformer的本质还是在feed forward层建立起来了kv，而kv代表的�
 
 #### 构建过程
 
-首先将所有的question去重以后，经过`bert`变成`1*768`维的向量，选取的bert模型为`sbert-base-chinese-nli`
+首先将所有的question去重以后，经过`bert`变成`1*768`
+维的向量，选取的bert模型为[sbert-base-chinese-nli](https://huggingface.co/uer/sbert-base-chinese-nli)
 
 将向量送入到faiss的IndexIVFPQ方法进行索引构建
 
@@ -238,23 +246,15 @@ question相当于是各个`文章/新闻/网页`的`标题`
 
 基于标题进行内容检索的过程
 
-#### FAQ优缺点分析
+#### 缺点分析
 
-FAQ本身的缺点：
+回答只能限定在原本的这些问题-答案里面，扩展的时候就得加问题-答案；并且随之修改索引（倒排索引，faiss索引）等。
 
-回答只能限定在原本的这些问题-答案里面，扩展的时候就得加问题-答案；并且随之修改索引（倒排索引，faiss索引）等
+相似度算法选择：tf-idf/BM25算法/编辑距离相似度/基本的词向量距离，基于深度学习/s-bert做语义相似
 
-简单一点的索引也可以通过构建分词后，以词作为倒排的倒排索引
+前者主要是关键词匹配，语义信息不需要两者完全一致，模糊场景，构建索引比较高效和快速；后者基于深度语义信息，构建索引较慢
 
-然后基于tf-idf/BM25算法/编辑距离相似度/基本的词向量距离，余弦/基于s-bert做语义相似度
-
-从左到右，基本的一个发展还是，前面的是关键词匹配，语义信息不需要两者完全一致，较为模糊的时候，关键词匹配即可
-
-当比较的两者需要比较严格，一些否定，比如说能吃什么和不能吃什么，用深度学习会更好
-
-faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也能保留语义信息
-
-那么进一步来考虑的话，不一定需要仅仅只对标题进行检索，文章的内容也是很重要的，考虑encode answer部分，构建成向量，由query直接查询相似答案
+为了便于知识库的扩展，考虑采用dual-encoder的形式，由query直接对answer进行索引。
 
 ### 构建answer的向量表示
 
@@ -288,13 +288,15 @@ DPR的基本原理，dual-encoder
 
 一般还是考虑query/question用一个encoder，answer/reference text部分用另一个encoder
 
-参照FAQ类似的方法进行实现
+训练完成后，同样采用faiss进行索引构建
 
 ### 训练一个QNLI模型，用于判断当前找到的answer是否成立
 
 由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑`cross-encoder`结构的`QNLI`任务
 
-在huggingface上看了一下，没有chinese qnli，在github上找到一个开源数据集[ChineseBLUE](https://github.com/alibaba-research/ChineseBLUE)，自行训练
+[训练集](cMedQNLI/data/QNLI_train_file.json)
+
+[验证集](cMedQNLI/data/QNLI_eval_file.json)
 
 训练参数：
 

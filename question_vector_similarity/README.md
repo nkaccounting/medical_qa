@@ -77,3 +77,5 @@ https://blog.csdn.net/qq_33283652/article/details/116976900
     gpu_index = faiss.index_cpu_to_all_gpus(  # build the index
         cpu_index
     )
+
+faiss作为索引的优点是可以直接使用聚类，压缩算法，同时也能保留语义信息
