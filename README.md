@@ -56,6 +56,48 @@ RocketQA主要是基于DPR的工作在往下进行展开
 
 针对正负样本的问题(正样本不足&负样本为假），用一个效率比较低，但是效果比较好的cross-encoder结构来当teacher，然后帮助dual-encoder student进行学习
 
+# update：_2022/6/29_
+
+基于面试反馈，补充关于整个系统evaluation的一点想法
+
+QA系统的一些基本评价指标：
+
+MAP：
+
+![img.png](picture/MAP1.png)
+
+![img_1.png](picture/MAP2.png)
+
+针对每个问题，p表示包含正确答案的个数，rel表示的是当前是否是正确答案。m和n分别代表库里包含的正确答案数和top_k检索个数n
+
+例如某个问题是3个正确答案，某次检索中排名为1,3,5
+
+理解为检索top1的话，有1个正确答案；检索top3会有两个正确答案；检索top5会有三个正确答案
+
+分子为1/1+2/3+3/5
+
+分母为min(3,5)
+
+MRR：
+
+![img.png](picture/MRR.png)
+
+针对每个问题，其第一个正确答案出现的位置rank；第一个正确答案出现的位置越靠前，得分就越高
+
+Accuracy@N
+
+![img.png](picture/Accuracy@N.png)
+
+针对每个问题，生成的N个问题里面，是正确的就记为1，是错误的就记为0，然后求平均
+
+## evaluation方案选择
+
+从现有数据出发，只有QA pair，比较符合的情况是MRR
+
+考虑随机选取一定比率的QA pair出来，输入Q，检索top5，得到5个答案，然后看标准答案在5个答案的什么rank
+
+如果没有被检索出来，相当于top5没有答案，score置为0
+
 # 生成式对话问答模型
 
 基于[gpt2-chinese-cluecorpussmall](https://huggingface.co/uer/gpt2-chinese-cluecorpussmall)，将问答和对话建模成生成式问题
