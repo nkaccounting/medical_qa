@@ -90,7 +90,7 @@ Accuracy@N
 
 针对每个问题，生成的N个问题里面，是正确的就记为1，是错误的就记为0，然后求平均
 
-## evaluation方案选择
+## Evaluation方案选择
 
 从现有数据出发，只有QA pair的数据，比较符合的情况是MRR指标
 
@@ -429,9 +429,13 @@ DPR的基本原理，dual-encoder
 
 由于找最相似的question/answer 都不可避免出现答非所问的情况，考虑`cross-encoder`结构的`QNLI`任务
 
-[训练集](cMedQNLI/data/QNLI_train_file.json)
+[训练集](cMedQNLI/data/QNLI_train_file.json)--80950
 
-[验证集](cMedQNLI/data/QNLI_eval_file.json)
+    {positive：40472，negative：40478}
+
+[验证集](cMedQNLI/data/QNLI_eval_file.json)--9969
+
+    {positive：4989，negative：4980}
 
 训练参数：
 
