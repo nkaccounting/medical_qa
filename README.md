@@ -12,11 +12,13 @@ ORQA：[Latent Retrieval for Weakly Supervised Open Domain Question Answering](h
 
 DPR：[Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906)
 
-[Learning Dense Representations of Phrases at Scale](https://arxiv.org/abs/2012.12624)
+Phrase encoder：[Learning Dense Representations of Phrases at Scale](https://arxiv.org/abs/2012.12624)
 
 GAR：[Generation-augmented retrieval for open-domain question answering](https://arxiv.org/abs/2009.08553)
 
 RocketQA：[RocketQA An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2010.08191)
+
+20220525发表TQR（Test-time Query Refinement）：[Refining Query Representations for Dense Retrieval at Test Time](https://arxiv.org/abs/2205.12680)
 
 大致梳理一下open-domain question and answering的时间线和发展关系
 
@@ -55,6 +57,20 @@ RocketQA主要是基于DPR的工作在往下进行展开
 目前的训练集相对于真实的场景，训练的数据还是不够；
 
 针对正负样本的问题(正样本不足&负样本为假），用一个效率比较低，但是效果比较好的cross-encoder结构来当teacher，然后帮助dual-encoder student进行学习
+
+TQA：主要还是承接DPR还有Phrase encoder这两个方法往下推进研究。在传统的DPR训练完成以后，得到dual-encoder结构的编码器。
+
+dpr，QA+和QA-；Phrase encoder在QA+和QA-以后，跟了一个query-side fine-tune；从前一步到后一步可以看到，预训练和使用之间的差距进一步缩小了，其带来的结果为in-domain的效果变强，但是同时out-of-domain被削弱，甚至还不如稀疏表示的情况
+
+那么如何解决ood的情况：
+
+对于一个未训练到的新领域，单条query->top_100 context；
+
+使用一个现成的cross-encoder作为teacher，去找100里面哪些属于正样本，哪些属于负样本，然后做query-side fine-tune；
+
+特别地定义了一个蒸馏方法，KL loss来做teacher and student process
+
+![img.png](picture/TQR.png)
 
 # update：_2022/6/29_
 
