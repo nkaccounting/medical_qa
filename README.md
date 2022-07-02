@@ -18,7 +18,7 @@ GAR：[Generation-augmented retrieval for open-domain question answering](https:
 
 RocketQA：[RocketQA An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2010.08191)
 
-20220525发表TQR（Test-time Query Refinement）：[Refining Query Representations for Dense Retrieval at Test Time](https://arxiv.org/abs/2205.12680)
+20220525TQR（Test-time Query Refinement）：[Refining Query Representations for Dense Retrieval at Test Time](https://arxiv.org/abs/2205.12680)
 
 大致梳理一下open-domain question and answering的时间线和发展关系
 
