@@ -1,24 +1,34 @@
 import os
 import time
+from collections import defaultdict
 
 import faiss
 import pandas as pd
 import torch
 from flask import Flask, request
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, QuestionAnsweringPipeline, BertForQuestionAnswering
 from transformers import BertForSequenceClassification, BertTokenizer
 
-qnli_model_dir = '../cMedQNLI/qnli'
 encode_model_dir = "../sbert-base-chinese-nli"
+qnli_model_dir = '../cMedQNLI/qnli'
+mrc_model_dir = "../../pretrain_model/chinese_pretrain_mrc_roberta_wwm_ext_large"
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+# Load model from HuggingFace Hub
+encode_tokenizer = AutoTokenizer.from_pretrained(encode_model_dir)
+encode_model = AutoModel.from_pretrained(encode_model_dir)
 
 qnli_model = BertForSequenceClassification.from_pretrained(qnli_model_dir)
 qnli_model = qnli_model.to(device)
 qnli_tokenizers = BertTokenizer.from_pretrained(qnli_model_dir)
 
-# Load model from HuggingFace Hub
-encode_tokenizer = AutoTokenizer.from_pretrained(encode_model_dir)
-encode_model = AutoModel.from_pretrained(encode_model_dir)
+mrc_tokenizer = AutoTokenizer.from_pretrained(mrc_model_dir)
+mrc_model = BertForQuestionAnswering.from_pretrained(mrc_model_dir)
+if torch.cuda.is_available():
+    mrc_pipeline = QuestionAnsweringPipeline(model=mrc_model, tokenizer=mrc_tokenizer, device=0)
+else:
+    mrc_pipeline = QuestionAnsweringPipeline(model=mrc_model, tokenizer=mrc_tokenizer)
 
 
 # Mean Pooling - Take attention mask into account for correct averaging
@@ -115,14 +125,27 @@ def re():
         )
         return response
 
-    res = one_question(text)
+    res, mrc_answer = one_question(text)
 
     response = {
         'question': text,
-        "information": res
+        "information": res,
+        "mrc_answer": mrc_answer
     }
 
     return response
+
+
+def get_sum_answer(mrc_res):
+    table = defaultdict(float)
+    max_value = 0
+    max_key = ""
+    for item in mrc_res:
+        table[item["answer"]] += item['score']
+        if table[item["answer"]] > max_value:
+            max_value = table[item["answer"]]
+            max_key = item["answer"]
+    return max_key
 
 
 def one_question(text: str, not_use_qnli=False):
@@ -131,6 +154,14 @@ def one_question(text: str, not_use_qnli=False):
     D, I = (search_one_query(text, index, top_k))
 
     res = [answers[id] for id in I[0]]
+
+    mrc_res = mrc_pipeline(
+        question=[text] * top_k,
+        context=res,
+    )
+
+    sum_answer = get_sum_answer(mrc_res)
+
     isqa, scores = isQApair([text] * top_k, res)
 
     no_answer = 0
@@ -150,7 +181,7 @@ def one_question(text: str, not_use_qnli=False):
                 result.append({
                     'no_answer': "对不起，目前我还不会这个问题，或者您的提问不够明确，待我学习后再来吧~"
                 })
-    return result
+    return result, sum_answer
 
 
 if __name__ == '__main__':
