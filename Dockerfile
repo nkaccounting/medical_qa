@@ -1,14 +1,16 @@
 FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel
 
-COPY FAQ_vector_similarity /workspace
+COPY question_vector_similarity /workspace
 
 COPY sbert-base-chinese-nli /sbert-base-chinese-nli
+
+COPY cMedQNLI/qnli /cMedQNLI/qnli
+
+COPY chinese_pretrain_mrc_roberta_wwm_ext_large /chinese_pretrain_mrc_roberta_wwm_ext_large
 
 COPY data/answers.csv /data/answers.csv
 
 COPY data/questions.csv /data/questions.csv
-
-COPY cMedQNLI/qnli /cMedQNLI/qnli
 
 COPY requirements.txt /workspace/requirements.txt
 

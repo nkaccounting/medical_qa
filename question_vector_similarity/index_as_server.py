@@ -11,7 +11,7 @@ from transformers import BertForSequenceClassification, BertTokenizer
 
 encode_model_dir = "../sbert-base-chinese-nli"
 qnli_model_dir = '../cMedQNLI/qnli'
-mrc_model_dir = "../../pretrain_model/chinese_pretrain_mrc_roberta_wwm_ext_large"
+mrc_model_dir = "../chinese_pretrain_mrc_roberta_wwm_ext_large"
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
