@@ -105,6 +105,12 @@ answers = [answer for answer in df["answers"]]
 t2 = time.time()
 print("加载索引和answer的对应关系所用时间，", t2 - t1)
 
+t1 = time.time()
+df = pd.read_csv("../data/simple_answers.csv", encoding="utf-8")
+simple_answers = [simple_answer for simple_answer in df["simple_answers"]]
+t2 = time.time()
+print("加载索引和answer的对应关系所用时间，", t2 - t1)
+
 PORT = os.getenv('PORT', 2265)
 
 app = Flask(__name__)
@@ -169,10 +175,11 @@ def one_question(text: str, not_use_qnli=False):
     for i, id in enumerate(I[0]):
         if not_use_qnli or isqa[i]:
             one_answer = {
-                "相似问题:".format(i=i): questions[id],
+                "相似问题": questions[id],
                 "相似度距离信息": str(D[0][i]),
-                '可信度'.format(i=i): scores[i],
-                '候选回答{i}:'.format(i=i): answers[id]
+                '可信度': scores[i],
+                '候选回答': answers[id],
+                # "候选摘要回答": simple_answers[id]
             }
             result.append(one_answer)
         else:

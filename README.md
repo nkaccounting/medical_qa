@@ -2,9 +2,7 @@
 
 A project about medical question and answering
 
-# 近期论文阅读
-
-近期阅读的部分论文和心得：
+# track IR and Open-domain QA
 
 DrQA：[Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051)
 
